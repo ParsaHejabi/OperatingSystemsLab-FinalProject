@@ -12,6 +12,8 @@
         "string.h": "c",
         "stdio.h": "c",
         "random.h": "c",
-        "thread.h": "c"
+        "thread.h": "c",
+        "debug.h": "c",
+        "stdbool.h": "c"
     }
 }
