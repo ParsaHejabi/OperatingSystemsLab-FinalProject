@@ -20,13 +20,13 @@
    of thread.h for details. */
 #define THREAD_MAGIC 0xcd6abf4b
 
-/* List of processes in THREAD_READY state, that is, processes
+/* Priority queue of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
-static struct list ready_list;
+static struct priorityQueue ready_priorityQueue;
 
-/* List of all processes.  Processes are added to this list
+/* Priority queue of all processes.  Processes are added to this priority queue
    when they are first scheduled and removed when they exit. */
-static struct list all_list;
+static struct priorityQueue all_priorityQueue;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -89,8 +89,8 @@ void thread_init(void)
   ASSERT(intr_get_level() == INTR_OFF);
 
   lock_init(&tid_lock);
-  list_init(&ready_list);
-  list_init(&all_list);
+  priorityQueue_init(&ready_priorityQueue);
+  priorityQueue_init(&all_priorityQueue);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread();
@@ -238,7 +238,7 @@ void thread_unblock(struct thread *t)
 
   old_level = intr_disable();
   ASSERT(t->status == THREAD_BLOCKED);
-  list_push_back(&ready_list, &t->elem);
+  priorityQueue_push(&t->elem, &ready_priorityQueue);
   t->status = THREAD_READY;
   intr_set_level(old_level);
 }
@@ -285,11 +285,11 @@ void thread_exit(void)
   process_exit();
 #endif
 
-  /* Remove thread from all threads list, set our status to dying,
+  /* Remove thread from all threads priority queue, set our status to dying,
      and schedule another process.  That process will destroy us
      when it calls thread_schedule_tail(). */
   intr_disable();
-  list_remove(&thread_current()->allelem);
+  priorityQueue_remove(&thread_current()->allelem);
   thread_current()->status = THREAD_DYING;
   schedule();
   NOT_REACHED();
@@ -306,7 +306,7 @@ void thread_yield(void)
 
   old_level = intr_disable();
   if (cur != idle_thread)
-    list_push_back(&ready_list, &cur->elem);
+    priorityQueue_push(&cur->elem, &ready_priorityQueue);
   cur->status = THREAD_READY;
   schedule();
   intr_set_level(old_level);
@@ -316,14 +316,14 @@ void thread_yield(void)
    This function must be called with interrupts off. */
 void thread_foreach(thread_action_func *func, void *aux)
 {
-  struct list_elem *e;
+  struct priorityQueue_elem *e;
 
   ASSERT(intr_get_level() == INTR_OFF);
 
-  for (e = list_begin(&all_list); e != list_end(&all_list);
-       e = list_next(e))
+  for (e = priorityQueue_top(&all_priorityQueue); e != priorityQueue_tail(&all_priorityQueue);
+       e = priorityQueue_next(e))
   {
-    struct thread *t = list_entry(e, struct thread, allelem);
+    struct thread *t = priorityQueue_entry(e, struct thread, allelem);
     func(t, aux);
   }
 }
@@ -331,13 +331,13 @@ void thread_foreach(thread_action_func *func, void *aux)
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void thread_set_priority(int new_priority)
 {
-  thread_current()->priority = new_priority;
+  thread_current()->allelem.priority = new_priority;
 }
 
 /* Returns the current thread's priority. */
 int thread_get_priority(void)
 {
-  return thread_current()->priority;
+  return thread_current()->allelem.priority;
 }
 
 /* Sets the current thread's nice value to NICE. */
@@ -369,13 +369,13 @@ int thread_get_recent_cpu(void)
 
 /* Idle thread.  Executes when no other thread is ready to run.
 
-   The idle thread is initially put on the ready list by
+   The idle thread is initially put on the ready priority queue by
    thread_start().  It will be scheduled once initially, at which
    point it initializes idle_thread, "up"s the semaphore passed
    to it to enable thread_start() to continue, and immediately
    blocks.  After that, the idle thread never appears in the
-   ready list.  It is returned by next_thread_to_run() as a
-   special case when the ready list is empty. */
+   ready priority queue.  It is returned by next_thread_to_run() as a
+   special case when the ready priority queue is empty. */
 static void
 idle(void *idle_started_ UNUSED)
 {
@@ -454,9 +454,9 @@ init_thread(struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy(t->name, name, sizeof t->name);
   t->stack = (uint8_t *)t + PGSIZE;
-  t->priority = priority;
+  t->allelem.priority = priority;
   t->magic = THREAD_MAGIC;
-  list_push_back(&all_list, &t->allelem);
+  priorityQueue_push(&t->allelem, &all_priorityQueue);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
@@ -480,10 +480,10 @@ alloc_frame(struct thread *t, size_t size)
 static struct thread *
 next_thread_to_run(void)
 {
-  if (list_empty(&ready_list))
+  if (priorityQueue_empty(&ready_priorityQueue))
     return idle_thread;
   else
-    return list_entry(list_pop_front(&ready_list), struct thread, elem);
+    return priorityQueue_entry(priorityQueue_pop(&ready_priorityQueue), struct thread, elem);
 }
 
 /* Completes a thread switch by activating the new thread's page
