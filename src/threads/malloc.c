@@ -1,6 +1,6 @@
 #include "threads/malloc.h"
 #include <debug.h>
-#include <list.h>
+#include <priorityQueue.h>
 #include <round.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -13,19 +13,19 @@
 
    The size of each request, in bytes, is rounded up to a power
    of 2 and assigned to the "descriptor" that manages blocks of
-   that size.  The descriptor keeps a list of free blocks.  If
-   the free list is nonempty, one of its blocks is used to
+   that size.  The descriptor keeps a priority queue of free blocks.  If
+   the free priority queue is nonempty, one of its blocks is used to
    satisfy the request.
 
    Otherwise, a new page of memory, called an "arena", is
    obtained from the page allocator (if none is available,
    malloc() returns a null pointer).  The new arena is divided
    into blocks, all of which are added to the descriptor's free
-   list.  Then we return one of the new blocks.
+   priority queue.  Then we return one of the new blocks.
 
-   When we free a block, we add it to its descriptor's free list.
+   When we free a block, we add it to its descriptor's free priority queue.
    But if the arena that the block was in now has no in-use
-   blocks, we remove all of the arena's blocks from the free list
+   blocks, we remove all of the arena's blocks from the free priority queue
    and give the arena back to the page allocator.
 
    We can't handle blocks bigger than 2 kB using this scheme,
@@ -39,7 +39,7 @@ struct desc
   {
     size_t block_size;          /* Size of each element in bytes. */
     size_t blocks_per_arena;    /* Number of blocks in an arena. */
-    struct list free_list;      /* List of free blocks. */
+    struct priorityQueue free_priorityQueue;      /* Priority queue of free blocks. */
     struct lock lock;           /* Lock. */
   };
 
@@ -57,7 +57,7 @@ struct arena
 /* Free block. */
 struct block 
   {
-    struct list_elem free_elem; /* Free list element. */
+    struct priorityQueue_elem free_elem; /* Free priority queue element. */
   };
 
 /* Our set of descriptors. */
@@ -79,7 +79,7 @@ malloc_init (void)
       ASSERT (desc_cnt <= sizeof descs / sizeof *descs);
       d->block_size = block_size;
       d->blocks_per_arena = (PGSIZE - sizeof (struct arena)) / block_size;
-      list_init (&d->free_list);
+      priorityQueue_init (&d->free_priorityQueue);
       lock_init (&d->lock);
     }
 }
@@ -121,8 +121,8 @@ malloc (size_t size)
 
   lock_acquire (&d->lock);
 
-  /* If the free list is empty, create a new arena. */
-  if (list_empty (&d->free_list))
+  /* If the free priority queue is empty, create a new arena. */
+  if (priorityQueue_empty (&d->free_priorityQueue))
     {
       size_t i;
 
@@ -134,19 +134,19 @@ malloc (size_t size)
           return NULL; 
         }
 
-      /* Initialize arena and add its blocks to the free list. */
+      /* Initialize arena and add its blocks to the free priority queue. */
       a->magic = ARENA_MAGIC;
       a->desc = d;
       a->free_cnt = d->blocks_per_arena;
       for (i = 0; i < d->blocks_per_arena; i++) 
         {
           struct block *b = arena_to_block (a, i);
-          list_push_back (&d->free_list, &b->free_elem);
+          priorityQueue_push (&b->free_elem, &d->free_priorityQueue);
         }
     }
 
-  /* Get a block from free list and return it. */
-  b = list_entry (list_pop_front (&d->free_list), struct block, free_elem);
+  /* Get a block from free priority queue and return it. */
+  b = priorityQueue_entry (priorityQueue_pop (&d->free_priorityQueue), struct block, free_elem);
   a = block_to_arena (b);
   a->free_cnt--;
   lock_release (&d->lock);
@@ -235,8 +235,8 @@ free (void *p)
   
           lock_acquire (&d->lock);
 
-          /* Add block to free list. */
-          list_push_front (&d->free_list, &b->free_elem);
+          /* Add block to free priority queue. */
+          priorityQueue_push (&b->free_elem, &d->free_priorityQueue);
 
           /* If the arena is now entirely unused, free it. */
           if (++a->free_cnt >= d->blocks_per_arena) 
@@ -247,7 +247,7 @@ free (void *p)
               for (i = 0; i < d->blocks_per_arena; i++) 
                 {
                   struct block *b = arena_to_block (a, i);
-                  list_remove (&b->free_elem);
+                  priorityQueue_remove (&b->free_elem);
                 }
               palloc_free_page (a);
             }
