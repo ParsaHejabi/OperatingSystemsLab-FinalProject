@@ -52,8 +52,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <list.h>
-
 /* Priority queue element. */
 struct priorityQueue_elem
 {

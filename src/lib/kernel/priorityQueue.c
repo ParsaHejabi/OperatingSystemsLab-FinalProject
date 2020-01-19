@@ -12,13 +12,13 @@ void priorityQueue_init(struct priorityQueue *priorityQueue)
 
 struct priorityQueue_elem *priorityQueue_top(struct priorityQueue *priorityQueue)
 {
-    ASSERT(priorityQueue != NULL && priorityQueue_size(priorityQueue) > 0);
+    ASSERT(priorityQueue != NULL && !priorityQueue_empty(priorityQueue));
     return priorityQueue->head.next;
 }
 
 struct priorityQueue_elem *priorityQueue_bottom(struct priorityQueue *priorityQueue)
 {
-    ASSERT(priorityQueue != NULL && priorityQueue_size(priorityQueue) > 0);
+    ASSERT(priorityQueue != NULL && !priorityQueue_empty(priorityQueue));
     return priorityQueue->tail.prev;
 }
 
