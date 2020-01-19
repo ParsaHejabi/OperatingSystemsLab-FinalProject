@@ -1,5 +1,5 @@
 #include "devices/block.h"
-#include <list.h>
+#include <priorityQueue.h>
 #include <string.h>
 #include <stdio.h>
 #include "devices/ide.h"
@@ -8,7 +8,7 @@
 /* A block device. */
 struct block
   {
-    struct list_elem list_elem;         /* Element in all_blocks. */
+    struct priorityQueue_elem priorityQueue_elem;         /* Element in all_blocks. */
 
     char name[16];                      /* Block device name. */
     enum block_type type;                /* Type of block device. */
@@ -21,13 +21,14 @@ struct block
     unsigned long long write_cnt;       /* Number of sectors written. */
   };
 
-/* List of all block devices. */
-static struct list all_blocks = LIST_INITIALIZER (all_blocks);
+/* Priority queue of all block devices. */
+static struct priorityQueue all_blocks;
+priorityQueue_init(&all_blocks);
 
 /* The block block assigned to each Pintos role. */
 static struct block *block_by_role[BLOCK_ROLE_CNT];
 
-static struct block *list_elem_to_block (struct list_elem *);
+static struct block *priorityQueue_elem_to_block (struct priorityQueue_elem *);
 
 /* Returns a human-readable name for the given block device
    TYPE. */
