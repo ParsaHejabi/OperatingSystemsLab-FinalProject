@@ -81,6 +81,11 @@ struct priorityQueue
        struct priorityQueue my_priorityQueue;
        priorityQueue_init (&my_priorityQueue);
 */
+#define PRIORITY_QUEUE_INITIALIZER(NAME, PRIORITY)         \
+  {                                                        \
+    PRIORITY, {NULL, &(NAME).tail}, { &(NAME).head, NULL } \
+  }
+
 void priorityQueue_init(struct priorityQueue *);
 
 /* Priority queue traversal. */
