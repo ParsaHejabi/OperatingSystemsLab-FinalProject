@@ -57,16 +57,16 @@
 /* Priority queue element. */
 struct priorityQueue_elem
 {
-    int priority;                    /* Priority for this element. */
-    struct priorityQueue_elem *prev; /* Previous priority queue element. */
-    struct priorityQueue_elem *next; /* Next priority queue element. */
+  int priority;                    /* Priority for this element. */
+  struct priorityQueue_elem *prev; /* Previous priority queue element. */
+  struct priorityQueue_elem *next; /* Next priority queue element. */
 };
 
 /* Priority queue. */
 struct priorityQueue
 {
-    struct priorityQueue_elem head;      /* Priority queue head. */
-    struct priorityQueue_elem tail;      /* Priority queue tail. */
+  struct priorityQueue_elem head; /* Priority queue head. */
+  struct priorityQueue_elem tail; /* Priority queue tail. */
 };
 
 /* Converts pointer to list element LIST_ELEM into a pointer to
@@ -89,8 +89,8 @@ void priorityQueue_init(struct priorityQueue *);
 struct priorityQueue_elem *priorityQueue_top(struct priorityQueue *);
 struct priorityQueue_elem *priorityQueue_bottom(struct priorityQueue *);
 
-struct priorityQueue_elem *priorityQueue_head (struct priorityQueue *);
-struct priorityQueue_elem *priorityQueue_tail (struct priorityQueue *);
+struct priorityQueue_elem *priorityQueue_head(struct priorityQueue *);
+struct priorityQueue_elem *priorityQueue_tail(struct priorityQueue *);
 
 struct priorityQueue_elem *priorityQueue_next(struct priorityQueue_elem *);
 struct priorityQueue_elem *priorityQueue_prev(struct priorityQueue_elem *);
@@ -99,9 +99,9 @@ struct priorityQueue_elem *priorityQueue_prev(struct priorityQueue_elem *);
 void priorityQueue_push(struct priorityQueue_elem *);
 
 /* Priority queue removal. */
-struct priorityQueue_elem *priorityQueue_pop();
-struct priorityQueue_elem *priorityQueue_pop_back();
-struct priorityQueue_elem *priorityQueue_remove (struct priorityQueue_elem *);
+struct priorityQueue_elem *priorityQueue_pop(struct priorityQueue *);
+struct priorityQueue_elem *priorityQueue_pop_back(struct priorityQueue *);
+struct priorityQueue_elem *priorityQueue_remove(struct priorityQueue_elem *);
 
 /* Priority queue properties. */
 size_t priorityQueue_size(struct priorityQueue *);
