@@ -96,7 +96,7 @@ struct priorityQueue_elem *priorityQueue_next(struct priorityQueue_elem *);
 struct priorityQueue_elem *priorityQueue_prev(struct priorityQueue_elem *);
 
 /* Priority queue insertion. */
-void priorityQueue_push(struct priorityQueue_elem *);
+void priorityQueue_push(struct priorityQueue_elem *, struct priorityQueue *);
 
 /* Priority queue removal. */
 struct priorityQueue_elem *priorityQueue_pop(struct priorityQueue *);
