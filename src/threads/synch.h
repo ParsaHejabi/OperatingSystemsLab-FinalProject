@@ -1,7 +1,6 @@
 #ifndef THREADS_SYNCH_H
 #define THREADS_SYNCH_H
 
-#include <list.h>
 #include <priorityQueue.h>
 #include <stdbool.h>
 
@@ -9,7 +8,7 @@
 struct semaphore
 {
   unsigned value;               /* Current value. */
-  struct priorityQueue waiters; /* List of waiting threads. */
+  struct priorityQueue waiters; /* Priority queue of waiting threads. */
 };
 
 void sema_init(struct semaphore *, unsigned value);
@@ -34,7 +33,7 @@ bool lock_held_by_current_thread(const struct lock *);
 /* Condition variable. */
 struct condition
 {
-  struct priorityQueue waiters; /* List of waiting threads. */
+  struct priorityQueue waiters; /* Priority queue of waiting threads. */
 };
 
 void cond_init(struct condition *);
