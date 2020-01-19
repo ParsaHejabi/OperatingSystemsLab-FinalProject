@@ -15,8 +15,6 @@
         "thread.h": "c",
         "debug.h": "c",
         "stdbool.h": "c",
-        "priorityqueue.h": "c",
-        "block.h": "c",
-        "stdint.h": "c"
+        "priorityqueue.h": "c"
     }
 }
