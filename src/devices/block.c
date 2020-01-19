@@ -1,5 +1,5 @@
 #include "devices/block.h"
-#include <list.h>
+#include <priorityQueue.h>
 #include <string.h>
 #include <stdio.h>
 #include "devices/ide.h"
@@ -8,7 +8,7 @@
 /* A block device. */
 struct block
   {
-    struct list_elem list_elem;         /* Element in all_blocks. */
+    struct priorityQueue_elem priorityQueue_elem;         /* Element in all_blocks. */
 
     char name[16];                      /* Block device name. */
     enum block_type type;                /* Type of block device. */
@@ -21,13 +21,13 @@ struct block
     unsigned long long write_cnt;       /* Number of sectors written. */
   };
 
-/* List of all block devices. */
-static struct list all_blocks = LIST_INITIALIZER (all_blocks);
+/* Priority queue of all block devices. */
+static struct priorityQueue all_blocks = PRIORITY_QUEUE_INITIALIZER (all_blocks);
 
 /* The block block assigned to each Pintos role. */
 static struct block *block_by_role[BLOCK_ROLE_CNT];
 
-static struct block *list_elem_to_block (struct list_elem *);
+static struct block *priorityQueue_elem_to_block (struct priorityQueue_elem *);
 
 /* Returns a human-readable name for the given block device
    TYPE. */
@@ -70,7 +70,7 @@ block_set_role (enum block_type role, struct block *block)
 struct block *
 block_first (void)
 {
-  return list_elem_to_block (list_begin (&all_blocks));
+  return priorityQueue_elem_to_block (priorityQueue_top(&all_blocks));
 }
 
 /* Returns the block device following BLOCK in kernel probe
@@ -78,7 +78,7 @@ block_first (void)
 struct block *
 block_next (struct block *block)
 {
-  return list_elem_to_block (list_next (&block->list_elem));
+  return priorityQueue_elem_to_block (priorityQueue_next(&block->priorityQueue_elem));
 }
 
 /* Returns the block device with the given NAME, or a null
@@ -86,12 +86,12 @@ block_next (struct block *block)
 struct block *
 block_get_by_name (const char *name)
 {
-  struct list_elem *e;
+  struct priorityQueue_elem *e;
 
-  for (e = list_begin (&all_blocks); e != list_end (&all_blocks);
-       e = list_next (e))
+  for (e = priorityQueue_top(&all_blocks); e != priorityQueue_tail(&all_blocks);
+       e = priorityQueue_next (e))
     {
-      struct block *block = list_entry (e, struct block, list_elem);
+      struct block *block = priorityQueue_entry (e, struct block, priorityQueue_elem);
       if (!strcmp (name, block->name))
         return block;
     }
@@ -192,7 +192,7 @@ block_register (const char *name, enum block_type type,
   if (block == NULL)
     PANIC ("Failed to allocate memory for block device descriptor");
 
-  list_push_back (&all_blocks, &block->list_elem);
+  priorityQueue_push (&block->priorityQueue_elem, &all_blocks);
   strlcpy (block->name, name, sizeof block->name);
   block->type = type;
   block->size = size;
@@ -211,13 +211,13 @@ block_register (const char *name, enum block_type type,
   return block;
 }
 
-/* Returns the block device corresponding to LIST_ELEM, or a null
-   pointer if LIST_ELEM is the list end of all_blocks. */
+/* Returns the block device corresponding to PRIORITYQUEUE_ELEM, or a null
+   pointer if PRIORITYQUEUE_ELEM is the priority queue end of all_blocks. */
 static struct block *
-list_elem_to_block (struct list_elem *list_elem)
+priorityQueue_elem_to_block (struct priorityQueue_elem *priorityQueue_elem)
 {
-  return (list_elem != list_end (&all_blocks)
-          ? list_entry (list_elem, struct block, list_elem)
+  return (priorityQueue_elem != priorityQueue_tail (&all_blocks)
+          ? priorityQueue_entry (priorityQueue_elem, struct block, priorityQueue_elem)
           : NULL);
 }
 
